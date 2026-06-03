@@ -5,6 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper: selalu return 200 agar supabase.functions.invoke() selalu mengisi `data`
+function ok(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -15,18 +23,13 @@ serve(async (req) => {
     const { prompt, currentDate } = await req.json();
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
-      return new Response(
-        JSON.stringify({ error: 'Parameter "prompt" wajib diisi.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+      return ok({ error: 'Parameter "prompt" wajib diisi.' });
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Konfigurasi server tidak lengkap (API key tidak ditemukan).' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
+      console.error('GEMINI_API_KEY tidak ditemukan di environment secrets.');
+      return ok({ error: 'Konfigurasi server tidak lengkap. Hubungi administrator.' });
     }
 
     const systemInstruction = `Anda adalah asisten keuangan cerdas. Ekstrak informasi transaksi keuangan dari cerita berikut ke dalam format JSON.
@@ -42,7 +45,7 @@ Format JSON yang WAJIB dikembalikan (tanpa teks lain, tanpa markdown, hanya obje
   "transaction_date": "YYYY-MM-DD"
 }`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const geminiResponse = await fetch(geminiUrl, {
       method: 'POST',
@@ -61,39 +64,29 @@ Format JSON yang WAJIB dikembalikan (tanpa teks lain, tanpa markdown, hanya obje
       }),
     });
 
+    const geminiData = await geminiResponse.json();
+
     if (!geminiResponse.ok) {
-      const errBody = await geminiResponse.text();
-      console.error('Gemini API error:', geminiResponse.status, errBody);
-      return new Response(
-        JSON.stringify({ error: 'Gagal menghubungi layanan AI. Coba lagi.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 502 }
-      );
+      // Log detail error Gemini ke console Supabase (tampil di tab Logs dashboard)
+      console.error('Gemini API error:', geminiResponse.status, JSON.stringify(geminiData));
+      const geminiMsg = geminiData?.error?.message ?? 'Unknown error dari Gemini API';
+      return ok({ error: `Gagal menghubungi layanan AI: ${geminiMsg}` });
     }
 
-    const geminiData = await geminiResponse.json();
     const resultText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!resultText) {
-      return new Response(
-        JSON.stringify({ error: 'AI tidak menghasilkan respons yang valid.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 502 }
-      );
+      console.error('Gemini response kosong:', JSON.stringify(geminiData));
+      return ok({ error: 'AI tidak menghasilkan respons. Coba ulangi dengan kalimat yang lebih jelas.' });
     }
 
-    // Validasi bahwa response adalah JSON valid
+    // Validasi JSON sebelum dikirim ke client
     const parsed = JSON.parse(resultText);
-
-    return new Response(
-      JSON.stringify(parsed),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
+    return ok(parsed);
 
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Terjadi kesalahan tak terduga.';
     console.error('Edge Function error:', message);
-    return new Response(
-      JSON.stringify({ error: message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    return ok({ error: `Terjadi kesalahan: ${message}` });
   }
 });
