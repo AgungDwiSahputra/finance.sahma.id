@@ -2,6 +2,7 @@
 import AppLayout from '../layouts/AppLayout.astro';
 import Card from '../components/ui/Card.astro';
 import Toast from '../components/ui/Toast.astro';
+import SmartInput from '../components/ui/SmartInput.astro';
 ---
 
 <AppLayout title="Tambah Transaksi" activeNav="tambah">
@@ -11,6 +12,8 @@ import Toast from '../components/ui/Toast.astro';
     <h1 class="text-gray-900 font-bold text-xl">Tambah Transaksi</h1>
     <p class="text-gray-400 text-sm mt-0.5">Catat pemasukan atau pengeluaran</p>
   </header>
+
+  <SmartInput />
 
   <div class="px-4">
     <Card>
@@ -140,6 +143,98 @@ import Toast from '../components/ui/Toast.astro';
     populateCategories(type);
   }
   (window as any).setType = setType;
+
+  // ── Smart Input AI ────────────────────────────────────────
+  const smartText    = document.getElementById('smart-prompt-text')    as HTMLTextAreaElement;
+  const smartBtn     = document.getElementById('smart-prompt-btn')     as HTMLButtonElement;
+  const smartLabel   = document.getElementById('smart-prompt-label')   as HTMLSpanElement;
+  const smartIcon    = document.getElementById('smart-prompt-icon')    as Element;
+  const smartSpinner = document.getElementById('smart-prompt-spinner') as Element;
+  const smartError   = document.getElementById('smart-prompt-error')   as HTMLParagraphElement;
+
+  // Enable tombol hanya jika textarea tidak kosong
+  smartText.addEventListener('input', () => {
+    smartBtn.disabled = smartText.value.trim() === '';
+    if (smartError.textContent) {
+      smartError.classList.add('hidden');
+      smartError.textContent = '';
+    }
+  });
+
+  function setSmartLoading(loading: boolean) {
+    smartBtn.disabled = loading;
+    smartIcon.classList.toggle('hidden', loading);
+    smartSpinner.classList.toggle('hidden', !loading);
+    smartLabel.textContent = loading ? 'Menganalisis...' : 'Deteksi AI';
+  }
+
+  function showSmartError(msg: string) {
+    smartError.textContent = msg;
+    smartError.classList.remove('hidden');
+  }
+
+  smartBtn.addEventListener('click', async () => {
+    const prompt = smartText.value.trim();
+    if (!prompt) return;
+
+    setSmartLoading(true);
+    smartError.classList.add('hidden');
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase.functions.invoke('parse-transaction', {
+      body: { prompt, currentDate: today },
+    });
+
+    setSmartLoading(false);
+
+    if (error || !data) {
+      showSmartError('Gagal menganalisis teks. Periksa koneksi internet dan coba lagi.');
+      return;
+    }
+
+    if (data.error) {
+      showSmartError(data.error);
+      return;
+    }
+
+    // Autofill: tipe transaksi (sekaligus refresh dropdown kategori)
+    const type: 'income' | 'expense' = data.type === 'income' ? 'income' : 'expense';
+    setType(type);
+
+    // Autofill: nominal
+    if (data.amount) {
+      (document.getElementById('input-amount') as HTMLInputElement).value = String(data.amount);
+    }
+
+    // Autofill: tanggal
+    if (data.transaction_date) {
+      (document.getElementById('input-date') as HTMLInputElement).value = data.transaction_date;
+    }
+
+    // Autofill: catatan/deskripsi
+    if (data.description) {
+      (document.getElementById('input-desc') as HTMLTextAreaElement).value = data.description;
+    }
+
+    // Smart category matching (F09): coba exact substring dulu, lalu kebalikannya
+    if (data.category_name) {
+      const aiCat = (data.category_name as string).toLowerCase();
+      const matched =
+        categories.find((c) => c.type === type && c.name.toLowerCase().includes(aiCat)) ??
+        categories.find((c) => c.type === type && aiCat.includes(c.name.toLowerCase()));
+
+      const catSelect = document.getElementById('input-category') as HTMLSelectElement;
+      if (matched) {
+        catSelect.value = matched.id;
+      } else {
+        // Fallback PRD F09: kosongkan dropdown agar user pilih manual
+        catSelect.value = '';
+      }
+    }
+
+    toast('Form berhasil diisi AI! Periksa dan koreksi jika perlu.', 'success');
+  });
 
   // ── Submit form ───────────────────────────────────────────
   const form  = document.getElementById('form-transaksi') as HTMLFormElement;
