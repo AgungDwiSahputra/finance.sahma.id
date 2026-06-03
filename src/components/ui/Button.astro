@@ -1,0 +1,58 @@
+---
+interface Props {
+  type?: 'button' | 'submit' | 'reset';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+  class?: string;
+}
+
+const {
+  type = 'button',
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  disabled = false,
+  loading = false,
+  class: extraClass = '',
+} = Astro.props;
+
+const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+
+const variants = {
+  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+  secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400',
+  danger: 'bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500',
+  ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-400',
+};
+
+const sizes = {
+  sm: 'px-3 py-1.5 text-sm',
+  md: 'px-4 py-2.5 text-sm',
+  lg: 'px-6 py-3.5 text-base',
+};
+
+const classes = [
+  base,
+  variants[variant],
+  sizes[size],
+  fullWidth ? 'w-full' : '',
+  extraClass,
+].filter(Boolean).join(' ');
+---
+
+<button
+  type={type}
+  disabled={disabled || loading}
+  class={classes}
+>
+  {loading && (
+    <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+    </svg>
+  )}
+  <slot />
+</button>

@@ -1,0 +1,20 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import BottomNav from '../components/ui/BottomNav.astro';
+
+interface Props {
+  title?: string;
+  activeNav?: 'dashboard' | 'tambah' | 'riwayat' | 'kategori';
+}
+
+const { title, activeNav } = Astro.props;
+---
+
+<BaseLayout title={title}>
+  <div class="min-h-screen flex flex-col">
+    <main class="flex-1 max-w-md mx-auto w-full pb-24">
+      <slot />
+    </main>
+    <BottomNav active={activeNav} />
+  </div>
+</BaseLayout>

@@ -1,0 +1,193 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import Card from '../components/ui/Card.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Toast from '../components/ui/Toast.astro';
+---
+
+<AppLayout title="Kategori" activeNav="kategori">
+  <Toast />
+
+  <!-- Header -->
+  <header class="px-4 pt-8 pb-4 flex items-center justify-between">
+    <div>
+      <h1 class="text-gray-900 font-bold text-xl">Kategori</h1>
+      <p class="text-gray-400 text-sm mt-0.5">Kelola kategori transaksi</p>
+    </div>
+    <button
+      id="btn-tambah-kategori"
+      class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors active:scale-95"
+      title="Tambah Kategori"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+  </header>
+
+  <!-- Tab Pengeluaran / Pemasukan -->
+  <div class="px-4 mb-4">
+    <div class="flex bg-gray-100 rounded-xl p-1 gap-1">
+      <button
+        id="tab-expense"
+        class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-white text-rose-600 shadow-sm"
+        onclick="switchCategoryTab('expense')"
+      >
+        💸 Pengeluaran
+      </button>
+      <button
+        id="tab-income"
+        class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500"
+        onclick="switchCategoryTab('income')"
+      >
+        💰 Pemasukan
+      </button>
+    </div>
+  </div>
+
+  <!-- List Kategori Pengeluaran -->
+  <div id="list-expense" class="px-4 flex flex-col gap-2">
+    <!-- Skeleton / Empty state sementara -->
+    <div id="empty-expense" class="hidden">
+      <EmptyState
+        icon="📂"
+        title="Belum ada kategori pengeluaran"
+        description="Tambahkan kategori untuk mulai mencatat."
+      />
+    </div>
+
+    <!-- Item kategori (diisi dari Supabase di Langkah 5) -->
+    <div id="items-expense" class="flex flex-col gap-2">
+      <!-- Preview skeleton -->
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center justify-between animate-pulse">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-gray-100 rounded-xl"></div>
+            <div class="h-4 bg-gray-100 rounded w-24"></div>
+          </div>
+          <div class="flex gap-2">
+            <div class="w-7 h-7 bg-gray-100 rounded-lg"></div>
+            <div class="w-7 h-7 bg-gray-100 rounded-lg"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- List Kategori Pemasukan -->
+  <div id="list-income" class="px-4 flex-col gap-2 hidden">
+    <div id="empty-income" class="hidden">
+      <EmptyState
+        icon="📂"
+        title="Belum ada kategori pemasukan"
+        description="Tambahkan kategori untuk mulai mencatat."
+      />
+    </div>
+    <div id="items-income" class="flex flex-col gap-2"></div>
+  </div>
+
+  <!-- Modal Tambah / Edit Kategori -->
+  <div
+    id="modal-kategori"
+    class="hidden fixed inset-0 z-50 flex items-end justify-center"
+    onclick="closeModal(event)"
+  >
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+    <!-- Sheet -->
+    <div class="relative w-full max-w-md bg-white rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl">
+      <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5"></div>
+
+      <h2 id="modal-title" class="text-gray-900 font-bold text-lg mb-5">Tambah Kategori</h2>
+
+      <form id="form-kategori" class="flex flex-col gap-4" novalidate>
+        <input type="hidden" id="kategori-id" name="id" value="" />
+        <input type="hidden" id="kategori-type" name="type" value="expense" />
+
+        <!-- Emoji Picker sederhana -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Ikon (Emoji)</label>
+          <div class="flex items-center gap-3">
+            <span id="preview-emoji" class="text-3xl w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center cursor-pointer select-none">📦</span>
+            <input
+              id="input-emoji"
+              type="text"
+              name="icon"
+              placeholder="Ketik emoji..."
+              maxlength="4"
+              value="📦"
+              class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Nama Kategori -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="input-nama-kategori">
+            Nama Kategori <span class="text-rose-500">*</span>
+          </label>
+          <input
+            id="input-nama-kategori"
+            type="text"
+            name="name"
+            placeholder="Contoh: Makan Siang, Transportasi..."
+            required
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <button
+          type="submit"
+          id="btn-simpan-kategori"
+          class="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+        >
+          Simpan
+        </button>
+      </form>
+    </div>
+  </div>
+
+</AppLayout>
+
+<script>
+  function switchCategoryTab(tab: 'expense' | 'income') {
+    const listExpense = document.getElementById('list-expense')!;
+    const listIncome  = document.getElementById('list-income')!;
+    const tabExpense  = document.getElementById('tab-expense')!;
+    const tabIncome   = document.getElementById('tab-income')!;
+
+    if (tab === 'expense') {
+      listExpense.classList.remove('hidden');
+      listIncome.classList.add('hidden');
+      tabExpense.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-white text-rose-600 shadow-sm';
+      tabIncome.className  = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500';
+    } else {
+      listIncome.classList.remove('hidden');
+      listExpense.classList.add('hidden');
+      tabIncome.className  = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-white text-emerald-600 shadow-sm';
+      tabExpense.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500';
+    }
+  }
+
+  function closeModal(e: MouseEvent) {
+    const modal = document.getElementById('modal-kategori')!;
+    if (e.target === modal) modal.classList.add('hidden');
+  }
+
+  document.getElementById('btn-tambah-kategori')?.addEventListener('click', () => {
+    document.getElementById('modal-kategori')?.classList.remove('hidden');
+  });
+
+  // Sync emoji preview
+  const inputEmoji   = document.getElementById('input-emoji')   as HTMLInputElement;
+  const previewEmoji = document.getElementById('preview-emoji')!;
+  inputEmoji?.addEventListener('input', () => {
+    previewEmoji.textContent = inputEmoji.value || '📦';
+  });
+
+  (window as any).switchCategoryTab = switchCategoryTab;
+  (window as any).closeModal = closeModal;
+
+  console.log('[Kategori] UI siap — logika CRUD akan disambungkan di Langkah 5');
+</script>

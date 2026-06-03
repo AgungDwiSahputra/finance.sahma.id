@@ -1,17 +1,104 @@
 ---
+import AppLayout from '../layouts/AppLayout.astro';
+import Card from '../components/ui/Card.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Toast from '../components/ui/Toast.astro';
 
+// Placeholder data — akan diganti dengan data Supabase di Langkah 5
+const bulan = 'Juni 2026';
+const saldo   = 0;
+const masuk   = 0;
+const keluar  = 0;
+
+function formatRupiah(angka: number) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+}
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<AppLayout title="Dashboard" activeNav="dashboard">
+  <Toast />
+
+  <!-- Header -->
+  <header class="px-4 pt-8 pb-4 flex items-center justify-between">
+    <div>
+      <p class="text-gray-400 text-sm">Selamat datang 👋</p>
+      <h1 class="text-gray-900 font-bold text-lg leading-tight" id="greeting-name">Pengguna</h1>
+    </div>
+    <button
+      id="btn-logout"
+      class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+      title="Keluar"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+      </svg>
+    </button>
+  </header>
+
+  <!-- Kartu Saldo Utama -->
+  <div class="px-4 mb-4">
+    <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-lg">
+      <p class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-1">Total Saldo</p>
+      <p class="text-3xl font-bold tracking-tight mb-4" id="saldo-total">{formatRupiah(saldo)}</p>
+      <p class="text-blue-200 text-xs">{bulan}</p>
+    </div>
+  </div>
+
+  <!-- Kartu Ringkasan Pemasukan & Pengeluaran -->
+  <div class="px-4 mb-6 grid grid-cols-2 gap-3">
+    <Card>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+          </svg>
+        </span>
+        <span class="text-xs text-gray-400 font-medium">Pemasukan</span>
+      </div>
+      <p class="text-emerald-600 font-bold text-base" id="total-masuk">{formatRupiah(masuk)}</p>
+    </Card>
+
+    <Card>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-8 h-8 bg-rose-50 rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+          </svg>
+        </span>
+        <span class="text-xs text-gray-400 font-medium">Pengeluaran</span>
+      </div>
+      <p class="text-rose-600 font-bold text-base" id="total-keluar">{formatRupiah(keluar)}</p>
+    </Card>
+  </div>
+
+  <!-- Transaksi Terakhir -->
+  <div class="px-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-gray-800 font-semibold text-sm">Transaksi Terakhir</h2>
+      <a href="/riwayat" class="text-blue-600 text-xs font-medium hover:underline">Lihat semua</a>
+    </div>
+
+    <!-- Empty State (tampil jika belum ada transaksi) -->
+    <div id="empty-transaksi">
+      <EmptyState
+        icon="📊"
+        title="Belum ada transaksi"
+        description="Mulai catat pengeluaran atau pemasukan pertama Anda hari ini."
+        actionLabel="+ Tambah Transaksi"
+        actionHref="/tambah"
+      />
+    </div>
+
+    <!-- List Transaksi (diisi via JavaScript dari Supabase) -->
+    <div id="list-transaksi" class="hidden flex flex-col gap-2">
+      <!-- Diisi dinamis di Langkah 5 -->
+    </div>
+  </div>
+
+</AppLayout>
+
+<script>
+  // Guard autentikasi akan diimplementasikan di Langkah 5
+  // Untuk preview UI, halaman ini langsung tampil
+  console.log('[Dashboard] UI siap — logika auth & data akan disambungkan di Langkah 5');
+</script>
