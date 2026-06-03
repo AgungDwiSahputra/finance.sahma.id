@@ -115,6 +115,23 @@ import Toast from '../components/ui/Toast.astro';
   }
   (window as any).switchTab = switchTab;
 
+  // ── Terjemahan error Supabase → Bahasa Indonesia ─────────
+  function terjemahkanError(msg: string): string {
+    if (msg.includes('Invalid login') || msg.includes('invalid_credentials'))
+      return 'Email atau password salah.';
+    if (msg.includes('Email not confirmed'))
+      return 'Email belum dikonfirmasi. Buka inbox email Anda dan klik link verifikasi terlebih dahulu.';
+    if (msg.includes('User already registered') || msg.includes('already been registered'))
+      return 'Email ini sudah terdaftar. Silakan masuk atau gunakan email lain.';
+    if (msg.includes('Too many requests') || msg.includes('over_email_send_rate_limit'))
+      return 'Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi.';
+    if (msg.includes('Password should be') || msg.includes('password'))
+      return 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+    if (msg.includes('Unable to validate') || msg.includes('network'))
+      return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+    return msg;
+  }
+
   // ── Form Masuk ────────────────────────────────────────────
   document.getElementById('form-masuk')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -128,10 +145,7 @@ import Toast from '../components/ui/Toast.astro';
     setLoading('btn-masuk', false, 'Masuk');
 
     if (error) {
-      const msg = error.message.includes('Invalid login')
-        ? 'Email atau password salah.'
-        : error.message;
-      toast(msg, 'error');
+      toast(terjemahkanError(error.message), 'error');
     } else {
       window.location.replace('/');
     }
@@ -148,7 +162,7 @@ import Toast from '../components/ui/Toast.astro';
     if (password.length < 6)             return toast('Password minimal 6 karakter.', 'error');
 
     setLoading('btn-daftar', true, 'Buat Akun');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
@@ -156,12 +170,43 @@ import Toast from '../components/ui/Toast.astro';
     setLoading('btn-daftar', false, 'Buat Akun');
 
     if (error) {
-      toast(error.message, 'error');
+      toast(terjemahkanError(error.message), 'error');
+    } else if (data.session) {
+      // Email confirmation dinonaktifkan di Supabase → langsung masuk
+      window.location.replace('/');
     } else {
-      toast('Akun berhasil dibuat! Silakan masuk.', 'success');
-      switchTab('masuk');
+      // Email confirmation aktif (default Supabase) → user harus verifikasi dulu
+      showKonfirmasiInfo(email);
     }
   });
+
+  // ── Banner konfirmasi email ───────────────────────────────
+  function showKonfirmasiInfo(email: string) {
+    // Pindah ke tab masuk dan pre-fill email
+    switchTab('masuk');
+    (document.getElementById('masuk-email') as HTMLInputElement).value = email;
+
+    // Tampilkan banner info di atas form masuk
+    const existing = document.getElementById('banner-konfirmasi');
+    if (existing) existing.remove();
+
+    const banner = document.createElement('div');
+    banner.id = 'banner-konfirmasi';
+    banner.className = 'bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex gap-3 items-start mb-2';
+    banner.innerHTML = `
+      <span class="text-xl shrink-0">📧</span>
+      <div class="flex-1">
+        <p class="text-blue-800 text-sm font-semibold">Cek Email Anda!</p>
+        <p class="text-blue-600 text-xs mt-0.5 leading-relaxed">
+          Link verifikasi dikirim ke <strong>${email}</strong>.<br>
+          Klik link tersebut, lalu kembali ke sini untuk masuk.
+        </p>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-blue-400 hover:text-blue-600 shrink-0 text-lg leading-none">×</button>`;
+
+    const formMasuk = document.getElementById('form-masuk')!;
+    formMasuk.parentElement!.insertBefore(banner, formMasuk);
+  }
 
   // ── Magic Link ────────────────────────────────────────────
   document.getElementById('btn-magic-link')?.addEventListener('click', async () => {

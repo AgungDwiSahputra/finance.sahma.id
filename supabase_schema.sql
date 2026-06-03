@@ -142,16 +142,19 @@ CREATE TRIGGER on_profile_updated
 
 -- ============================================================
 -- TRIGGER: Auto-create profil + default kategori saat user baru daftar
+-- Menggunakan ON CONFLICT DO NOTHING + EXCEPTION handler agar
+-- kegagalan trigger TIDAK membatalkan proses signup user.
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Buat entri profil kosong
+  -- Buat entri profil (ON CONFLICT: abaikan jika sudah ada)
   INSERT INTO public.profiles (id, full_name)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', '')
-  );
+  )
+  ON CONFLICT (id) DO NOTHING;
 
   -- Insert kategori default: Pengeluaran
   INSERT INTO public.categories (user_id, name, type, icon) VALUES
@@ -162,7 +165,8 @@ BEGIN
     (NEW.id, 'Hiburan',             'expense', '🎬'),
     (NEW.id, 'Tagihan & Utilitas',  'expense', '💡'),
     (NEW.id, 'Pendidikan',          'expense', '📚'),
-    (NEW.id, 'Lain-lain',           'expense', '📦');
+    (NEW.id, 'Lain-lain',           'expense', '📦')
+  ON CONFLICT DO NOTHING;
 
   -- Insert kategori default: Pemasukan
   INSERT INTO public.categories (user_id, name, type, icon) VALUES
@@ -170,8 +174,14 @@ BEGIN
     (NEW.id, 'Freelance',   'income', '💻'),
     (NEW.id, 'Investasi',   'income', '📈'),
     (NEW.id, 'Hadiah',      'income', '🎁'),
-    (NEW.id, 'Lain-lain',   'income', '✨');
+    (NEW.id, 'Lain-lain',   'income', '✨')
+  ON CONFLICT DO NOTHING;
 
+  RETURN NEW;
+
+EXCEPTION WHEN OTHERS THEN
+  -- Catat error ke log PostgreSQL tapi JANGAN batalkan signup
+  RAISE WARNING 'handle_new_user: gagal membuat profil/kategori untuk user % — %', NEW.id, SQLERRM;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
