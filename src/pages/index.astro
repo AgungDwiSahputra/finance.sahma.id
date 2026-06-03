@@ -70,7 +70,7 @@ import Toast from '../components/ui/Toast.astro';
   <div class="px-4">
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-gray-800 font-semibold text-sm">Transaksi Terakhir</h2>
-      <a href="/riwayat" class="text-blue-600 text-xs font-medium hover:underline">Lihat semua</a>
+      <a href={`${import.meta.env.BASE_URL}riwayat`} class="text-blue-600 text-xs font-medium hover:underline">Lihat semua</a>
     </div>
 
     <div id="empty-transaksi" class="hidden">
@@ -79,7 +79,7 @@ import Toast from '../components/ui/Toast.astro';
         title="Belum ada transaksi"
         description="Mulai catat pengeluaran atau pemasukan pertama Anda hari ini."
         actionLabel="+ Tambah Transaksi"
-        actionHref="/tambah"
+        actionHref={`${import.meta.env.BASE_URL}tambah`}
       />
     </div>
 
@@ -194,6 +194,6 @@ import Toast from '../components/ui/Toast.astro';
   // ── Logout ────────────────────────────────────────────────
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     await supabase.auth.signOut();
-    window.location.replace('/login');
+    window.location.replace(import.meta.env.BASE_URL + 'login');
   });
 </script>

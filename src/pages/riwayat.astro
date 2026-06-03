@@ -46,7 +46,7 @@ import Toast from '../components/ui/Toast.astro';
 
     <div id="empty-riwayat" class="hidden">
       <EmptyState icon="🗂️" title="Belum ada transaksi" description="Tidak ada transaksi di bulan yang dipilih."
-        actionLabel="+ Tambah Sekarang" actionHref="/tambah" />
+        actionLabel="+ Tambah Sekarang" actionHref={`${import.meta.env.BASE_URL}tambah`} />
     </div>
 
     <div id="groups-container" class="hidden flex-col gap-6"></div>

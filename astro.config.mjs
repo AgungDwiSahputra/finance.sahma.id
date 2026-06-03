@@ -5,7 +5,8 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   output: 'static',
-  site: 'https://finance.sahma.id',
+  site: 'https://agungdwisahputra.github.io',
+  base: '/finance.sahma.id',
   vite: {
     plugins: [tailwindcss()],
     resolve: {
