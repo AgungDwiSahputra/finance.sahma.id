@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Halaman Tidak Ditemukan">
+  <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 text-center">
+
+    <div class="max-w-sm w-full">
+      <!-- Ilustrasi -->
+      <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+        <span class="text-5xl">🔍</span>
+      </div>
+
+      <!-- Teks -->
+      <h1 class="text-gray-900 font-bold text-2xl mb-2">Halaman Tidak Ditemukan</h1>
+      <p class="text-gray-400 text-sm leading-relaxed mb-8">
+        Halaman yang Anda cari tidak tersedia atau URL tidak valid.
+      </p>
+
+      <!-- Tombol kembali -->
+      <a
+        href="/"
+        class="inline-flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        Kembali ke Dashboard
+      </a>
+
+      <a href="/login" class="block mt-3 text-sm text-gray-400 hover:text-blue-600 transition-colors">
+        atau masuk ke akun Anda
+      </a>
+    </div>
+
+  </div>
+</BaseLayout>
