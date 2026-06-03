@@ -3,15 +3,17 @@ name: Deploy ke GitHub Pages
 on:
   push:
     branches: ["main"]
-  workflow_dispatch: # Izinkan trigger manual dari tab Actions
+  workflow_dispatch:
 
-# Izin yang dibutuhkan untuk deploy ke GitHub Pages
+# Paksa semua GitHub Actions internal pakai Node.js 24 (bukan 20 yang deprecated)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Pastikan hanya satu deployment berjalan dalam satu waktu
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -25,10 +27,10 @@ jobs:
       - name: Checkout kode
         uses: actions/checkout@v4
 
-      - name: Setup Node.js v20
+      - name: Setup Node.js v22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Setup GitHub Pages
@@ -37,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Astro (inject Supabase env vars dari Secrets)
+      - name: Build Astro
         run: npm run build
         env:
           PUBLIC_SUPABASE_URL:      ${{ secrets.PUBLIC_SUPABASE_URL }}
