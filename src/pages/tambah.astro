@@ -7,7 +7,6 @@ import Toast from '../components/ui/Toast.astro';
 <AppLayout title="Tambah Transaksi" activeNav="tambah">
   <Toast />
 
-  <!-- Header -->
   <header class="px-4 pt-8 pb-4">
     <h1 class="text-gray-900 font-bold text-xl">Tambah Transaksi</h1>
     <p class="text-gray-400 text-sm mt-0.5">Catat pemasukan atau pengeluaran</p>
@@ -17,26 +16,16 @@ import Toast from '../components/ui/Toast.astro';
     <Card>
       <form id="form-transaksi" novalidate class="flex flex-col gap-5">
 
-        <!-- Toggle Tipe: Pengeluaran / Pemasukan -->
+        <!-- Toggle Tipe -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Tipe Transaksi</label>
-          <div class="flex bg-gray-100 rounded-xl p-1 gap-1" id="type-toggle">
-            <button
-              type="button"
-              data-type="expense"
-              id="btn-expense"
-              class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-rose-600 text-white shadow-sm"
-              onclick="setType('expense')"
-            >
+          <div class="flex bg-gray-100 rounded-xl p-1 gap-1">
+            <button type="button" id="btn-expense" onclick="setType('expense')"
+              class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-rose-600 text-white shadow-sm">
               💸 Pengeluaran
             </button>
-            <button
-              type="button"
-              data-type="income"
-              id="btn-income"
-              class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-500"
-              onclick="setType('income')"
-            >
+            <button type="button" id="btn-income" onclick="setType('income')"
+              class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-500">
               💰 Pemasukan
             </button>
           </div>
@@ -50,16 +39,8 @@ import Toast from '../components/ui/Toast.astro';
           </label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Rp</span>
-            <input
-              id="input-amount"
-              type="number"
-              name="amount"
-              placeholder="0"
-              min="1"
-              required
-              inputmode="numeric"
-              class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+            <input id="input-amount" type="number" name="amount" placeholder="0" min="1" required inputmode="numeric"
+              class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
           </div>
           <p id="error-amount" class="text-rose-500 text-xs mt-1 hidden">Nominal harus lebih dari 0.</p>
         </div>
@@ -69,115 +50,138 @@ import Toast from '../components/ui/Toast.astro';
           <label class="block text-sm font-medium text-gray-700 mb-1.5" for="input-category">
             Kategori <span class="text-rose-500">*</span>
           </label>
-          <select
-            id="input-category"
-            name="category_id"
-            required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white appearance-none"
-          >
-            <option value="" disabled selected>Pilih kategori...</option>
-            <!-- Diisi dinamis dari Supabase di Langkah 5 -->
+          <select id="input-category" name="category_id" required
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white appearance-none">
+            <option value="" disabled selected>Memuat kategori...</option>
           </select>
           <p id="error-category" class="text-rose-500 text-xs mt-1 hidden">Pilih kategori terlebih dahulu.</p>
         </div>
 
         <!-- Tanggal -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="input-date">
-            Tanggal
-          </label>
-          <input
-            id="input-date"
-            type="date"
-            name="transaction_date"
-            required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="input-date">Tanggal</label>
+          <input id="input-date" type="date" name="transaction_date" required
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
         </div>
 
-        <!-- Catatan (opsional) -->
+        <!-- Catatan -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1.5" for="input-desc">
             Catatan <span class="text-gray-400 font-normal">(opsional)</span>
           </label>
-          <textarea
-            id="input-desc"
-            name="description"
-            placeholder="Misal: makan siang bersama tim..."
-            rows="2"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-          ></textarea>
+          <textarea id="input-desc" name="description" placeholder="Misal: makan siang bersama tim..." rows="2"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"></textarea>
         </div>
 
         <!-- Tombol Simpan -->
-        <button
-          type="submit"
-          id="btn-simpan"
-          class="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-        >
+        <button type="submit" id="btn-simpan"
+          class="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none">
           Simpan Transaksi
         </button>
 
       </form>
     </Card>
   </div>
-
 </AppLayout>
 
 <script>
-  // Set tanggal default ke hari ini
+  import { supabase }    from '../lib/supabase';
+  import { requireAuth } from '../lib/auth-guard';
+  import type { Category } from '../lib/types';
+
+  const toast = (msg: string, type: 'success'|'error'|'info' = 'info') =>
+    (window as any).showToast?.(msg, type);
+
+  // ── Auth guard ────────────────────────────────────────────
+  const session = await requireAuth();
+  if (!session) throw new Error('redirect');
+
+  // ── Set tanggal default ───────────────────────────────────
   const inputDate = document.getElementById('input-date') as HTMLInputElement;
-  if (inputDate) {
-    inputDate.value = new Date().toISOString().split('T')[0];
+  inputDate.value = new Date().toISOString().split('T')[0];
+
+  // ── Fetch semua kategori (simpan di memori) ───────────────
+  const { data: allCategories } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('name');
+
+  const categories = (allCategories ?? []) as Category[];
+
+  // ── Populate dropdown kategori ────────────────────────────
+  function populateCategories(type: 'expense' | 'income') {
+    const select = document.getElementById('input-category') as HTMLSelectElement;
+    const filtered = categories.filter((c) => c.type === type);
+
+    select.innerHTML = filtered.length === 0
+      ? '<option value="" disabled selected>Tidak ada kategori. Buat di menu Kategori.</option>'
+      : `<option value="" disabled selected>Pilih kategori...</option>` +
+        filtered.map((c) =>
+          `<option value="${c.id}">${c.icon ? c.icon + ' ' : ''}${c.name}</option>`
+        ).join('');
   }
 
-  function setType(type: 'expense' | 'income') {
-    const btnExpense = document.getElementById('btn-expense')!;
-    const btnIncome  = document.getElementById('btn-income')!;
-    const inputType  = document.getElementById('input-type') as HTMLInputElement;
+  populateCategories('expense'); // default
 
-    inputType.value = type;
+  // ── Toggle tipe transaksi ─────────────────────────────────
+  function setType(type: 'expense' | 'income') {
+    const btnE = document.getElementById('btn-expense')!;
+    const btnI = document.getElementById('btn-income')!;
+    (document.getElementById('input-type') as HTMLInputElement).value = type;
 
     if (type === 'expense') {
-      btnExpense.className = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-rose-600 text-white shadow-sm';
-      btnIncome.className  = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-500';
+      btnE.className = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-rose-600 text-white shadow-sm';
+      btnI.className = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-500';
     } else {
-      btnIncome.className  = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-emerald-600 text-white shadow-sm';
-      btnExpense.className = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-500';
+      btnI.className = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all bg-emerald-600 text-white shadow-sm';
+      btnE.className = 'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-500';
     }
+    populateCategories(type);
   }
+  (window as any).setType = setType;
 
-  // Validasi client-side sebelum submit
-  const form = document.getElementById('form-transaksi') as HTMLFormElement;
-  form?.addEventListener('submit', (e) => {
+  // ── Submit form ───────────────────────────────────────────
+  const form  = document.getElementById('form-transaksi') as HTMLFormElement;
+  const btnOk = document.getElementById('btn-simpan')     as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const amount   = (document.getElementById('input-amount')   as HTMLInputElement).value;
-    const category = (document.getElementById('input-category') as HTMLSelectElement).value;
-    const errAmt   = document.getElementById('error-amount')!;
-    const errCat   = document.getElementById('error-category')!;
+    const amount      = Number((document.getElementById('input-amount')   as HTMLInputElement).value);
+    const categoryId  = (document.getElementById('input-category') as HTMLSelectElement).value;
+    const date        = (document.getElementById('input-date')      as HTMLInputElement).value;
+    const description = (document.getElementById('input-desc')      as HTMLTextAreaElement).value.trim();
+
+    const errAmt = document.getElementById('error-amount')!;
+    const errCat = document.getElementById('error-category')!;
 
     let valid = true;
-
-    if (!amount || Number(amount) <= 0) {
-      errAmt.classList.remove('hidden');
-      valid = false;
-    } else {
-      errAmt.classList.add('hidden');
-    }
-
-    if (!category) {
-      errCat.classList.remove('hidden');
-      valid = false;
-    } else {
-      errCat.classList.add('hidden');
-    }
-
+    if (!amount || amount <= 0) { errAmt.classList.remove('hidden'); valid = false; }
+    else                         errAmt.classList.add('hidden');
+    if (!categoryId)             { errCat.classList.remove('hidden'); valid = false; }
+    else                         errCat.classList.add('hidden');
     if (!valid) return;
 
-    // Logika submit Supabase akan disambungkan di Langkah 5
-    console.log('[Form] Validasi lulus — akan submit ke Supabase di Langkah 5');
-  });
+    // Anti double-submit
+    btnOk.disabled = true;
+    btnOk.innerHTML = `<svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg> Menyimpan...`;
 
-  (window as any).setType = setType;
+    const { error } = await supabase.from('transactions').insert({
+      user_id:          session.user.id,
+      amount,
+      category_id:      categoryId,
+      transaction_date: date,
+      description:      description || null,
+    });
+
+    if (error) {
+      toast('Gagal menyimpan. Periksa koneksi internet Anda.', 'error');
+      btnOk.disabled = false;
+      btnOk.innerHTML = 'Simpan Transaksi';
+    } else {
+      toast('Transaksi berhasil disimpan!', 'success');
+      setTimeout(() => window.location.replace('/'), 1200);
+    }
+  });
 </script>

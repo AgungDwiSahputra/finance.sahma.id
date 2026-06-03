@@ -3,16 +3,6 @@ import AppLayout from '../layouts/AppLayout.astro';
 import Card from '../components/ui/Card.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
 import Toast from '../components/ui/Toast.astro';
-
-// Placeholder data — akan diganti dengan data Supabase di Langkah 5
-const bulan = 'Juni 2026';
-const saldo   = 0;
-const masuk   = 0;
-const keluar  = 0;
-
-function formatRupiah(angka: number) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
-}
 ---
 
 <AppLayout title="Dashboard" activeNav="dashboard">
@@ -22,13 +12,12 @@ function formatRupiah(angka: number) {
   <header class="px-4 pt-8 pb-4 flex items-center justify-between">
     <div>
       <p class="text-gray-400 text-sm">Selamat datang 👋</p>
-      <h1 class="text-gray-900 font-bold text-lg leading-tight" id="greeting-name">Pengguna</h1>
+      <h1 class="text-gray-900 font-bold text-lg leading-tight" id="greeting-name">
+        <span class="inline-block w-28 h-5 bg-gray-100 rounded animate-pulse"></span>
+      </h1>
     </div>
-    <button
-      id="btn-logout"
-      class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-      title="Keluar"
-    >
+    <button id="btn-logout" title="Keluar"
+      class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
       </svg>
@@ -38,13 +27,15 @@ function formatRupiah(angka: number) {
   <!-- Kartu Saldo Utama -->
   <div class="px-4 mb-4">
     <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-lg">
-      <p class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-1">Total Saldo</p>
-      <p class="text-3xl font-bold tracking-tight mb-4" id="saldo-total">{formatRupiah(saldo)}</p>
-      <p class="text-blue-200 text-xs">{bulan}</p>
+      <p class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-1">Total Saldo Bulan Ini</p>
+      <p class="text-3xl font-bold tracking-tight mb-4" id="saldo-total">
+        <span class="inline-block w-40 h-8 bg-white/20 rounded-lg animate-pulse"></span>
+      </p>
+      <p class="text-blue-200 text-xs" id="label-bulan">—</p>
     </div>
   </div>
 
-  <!-- Kartu Ringkasan Pemasukan & Pengeluaran -->
+  <!-- Ringkasan Pemasukan & Pengeluaran -->
   <div class="px-4 mb-6 grid grid-cols-2 gap-3">
     <Card>
       <div class="flex items-center gap-2 mb-2">
@@ -55,7 +46,9 @@ function formatRupiah(angka: number) {
         </span>
         <span class="text-xs text-gray-400 font-medium">Pemasukan</span>
       </div>
-      <p class="text-emerald-600 font-bold text-base" id="total-masuk">{formatRupiah(masuk)}</p>
+      <p class="text-emerald-600 font-bold text-base" id="total-masuk">
+        <span class="inline-block w-20 h-5 bg-gray-100 rounded animate-pulse"></span>
+      </p>
     </Card>
 
     <Card>
@@ -67,7 +60,9 @@ function formatRupiah(angka: number) {
         </span>
         <span class="text-xs text-gray-400 font-medium">Pengeluaran</span>
       </div>
-      <p class="text-rose-600 font-bold text-base" id="total-keluar">{formatRupiah(keluar)}</p>
+      <p class="text-rose-600 font-bold text-base" id="total-keluar">
+        <span class="inline-block w-20 h-5 bg-gray-100 rounded animate-pulse"></span>
+      </p>
     </Card>
   </div>
 
@@ -78,8 +73,7 @@ function formatRupiah(angka: number) {
       <a href="/riwayat" class="text-blue-600 text-xs font-medium hover:underline">Lihat semua</a>
     </div>
 
-    <!-- Empty State (tampil jika belum ada transaksi) -->
-    <div id="empty-transaksi">
+    <div id="empty-transaksi" class="hidden">
       <EmptyState
         icon="📊"
         title="Belum ada transaksi"
@@ -89,16 +83,117 @@ function formatRupiah(angka: number) {
       />
     </div>
 
-    <!-- List Transaksi (diisi via JavaScript dari Supabase) -->
-    <div id="list-transaksi" class="hidden flex flex-col gap-2">
-      <!-- Diisi dinamis di Langkah 5 -->
+    <div id="list-transaksi" class="hidden flex-col gap-2"></div>
+
+    <!-- Skeleton loading -->
+    <div id="skeleton-transaksi" class="flex flex-col gap-2">
+      {Array.from({ length: 4 }).map(() => (
+        <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3 animate-pulse">
+          <div class="w-10 h-10 bg-gray-100 rounded-xl shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3.5 bg-gray-100 rounded w-3/4"></div>
+            <div class="h-3 bg-gray-100 rounded w-1/2"></div>
+          </div>
+          <div class="h-4 bg-gray-100 rounded w-16"></div>
+        </div>
+      ))}
     </div>
   </div>
-
 </AppLayout>
 
 <script>
-  // Guard autentikasi akan diimplementasikan di Langkah 5
-  // Untuk preview UI, halaman ini langsung tampil
-  console.log('[Dashboard] UI siap — logika auth & data akan disambungkan di Langkah 5');
+  import { supabase }          from '../lib/supabase';
+  import { requireAuth }       from '../lib/auth-guard';
+  import { formatRupiah, getCurrentMonthRange } from '../lib/format';
+  import type { Transaction }  from '../lib/types';
+
+  const toast = (msg: string, type: 'success'|'error'|'info' = 'info') =>
+    (window as any).showToast?.(msg, type);
+
+  // ── Auth guard ────────────────────────────────────────────
+  const session = await requireAuth();
+  if (!session) throw new Error('redirect');
+
+  // ── Tampilkan nama pengguna ───────────────────────────────
+  const nameEl = document.getElementById('greeting-name')!;
+  const displayName =
+    session.user.user_metadata?.full_name ||
+    session.user.email?.split('@')[0] ||
+    'Pengguna';
+  nameEl.textContent = displayName;
+
+  // ── Label bulan ───────────────────────────────────────────
+  const { from, to } = getCurrentMonthRange();
+  const bulanLabel = new Date(from).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  document.getElementById('label-bulan')!.textContent = bulanLabel;
+
+  // ── Fetch transaksi bulan ini ─────────────────────────────
+  const { data: transactions, error } = await supabase
+    .from('transactions')
+    .select('*, categories(id, name, type, icon)')
+    .eq('user_id', session.user.id)
+    .gte('transaction_date', from)
+    .lte('transaction_date', to)
+    .order('transaction_date', { ascending: false })
+    .order('created_at',       { ascending: false })
+    .limit(5);
+
+  if (error) {
+    toast('Gagal memuat data. Periksa koneksi internet Anda.', 'error');
+  }
+
+  const txList = (transactions ?? []) as Transaction[];
+
+  // ── Hitung ringkasan ──────────────────────────────────────
+  let totalMasuk  = 0;
+  let totalKeluar = 0;
+
+  txList.forEach((tx) => {
+    const type = tx.categories?.type;
+    if (type === 'income')  totalMasuk  += tx.amount;
+    if (type === 'expense') totalKeluar += tx.amount;
+  });
+
+  const saldo = totalMasuk - totalKeluar;
+
+  document.getElementById('saldo-total')!.textContent = formatRupiah(saldo);
+  document.getElementById('total-masuk')!.textContent  = formatRupiah(totalMasuk);
+  document.getElementById('total-keluar')!.textContent = formatRupiah(totalKeluar);
+
+  // ── Render transaksi terakhir ─────────────────────────────
+  const skeleton = document.getElementById('skeleton-transaksi')!;
+  const listEl   = document.getElementById('list-transaksi')!;
+  const emptyEl  = document.getElementById('empty-transaksi')!;
+
+  skeleton.classList.add('hidden');
+
+  if (txList.length === 0) {
+    emptyEl.classList.remove('hidden');
+  } else {
+    listEl.classList.replace('hidden', 'flex');
+    listEl.innerHTML = txList.map((tx) => {
+      const cat     = tx.categories;
+      const isIncome = cat?.type === 'income';
+      const icon    = cat?.icon || '📦';
+      const name    = cat?.name || 'Lainnya';
+      const sign    = isIncome ? '+' : '-';
+      const color   = isIncome ? 'text-emerald-600' : 'text-rose-600';
+
+      return `
+        <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+          <span class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl shrink-0">${icon}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-gray-900 text-sm font-medium truncate">${name}</p>
+            <p class="text-gray-400 text-xs truncate">${tx.description || '—'}</p>
+          </div>
+          <p class="font-semibold text-sm shrink-0 ${color}">${sign}${formatRupiah(tx.amount)}</p>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Logout ────────────────────────────────────────────────
+  document.getElementById('btn-logout')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.replace('/login');
+  });
 </script>
