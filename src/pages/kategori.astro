@@ -61,7 +61,12 @@ import Toast from '../components/ui/Toast.astro';
   <div id="modal-kategori" class="hidden fixed inset-0 z-50 flex items-end justify-center" onclick="handleModalClick(event)">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
     <div class="relative w-full max-w-md bg-white rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl">
-      <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5"></div>
+      <!-- Drag handle: area lebih besar agar mudah digeser/disentuh -->
+      <button type="button" id="modal-drag-handle"
+        class="w-full flex justify-center py-1 mb-4 cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Geser ke bawah untuk menutup">
+        <div class="w-10 h-1 bg-gray-300 rounded-full pointer-events-none"></div>
+      </button>
       <h2 id="modal-title" class="text-gray-900 font-bold text-lg mb-5">Tambah Kategori</h2>
 
       <form id="form-kategori" class="flex flex-col gap-4" novalidate>
@@ -232,15 +237,60 @@ import Toast from '../components/ui/Toast.astro';
   }
 
   function closeModal() {
-    document.getElementById('modal-kategori')!.classList.add('hidden');
+    const modal = document.getElementById('modal-kategori')!;
+    const card  = modal.querySelector('.relative') as HTMLElement | null;
+    if (card) { card.style.transform = ''; card.style.transition = ''; }
+    modal.classList.add('hidden');
   }
 
   function handleModalClick(e: MouseEvent) {
-    if ((e.target as HTMLElement).id === 'modal-kategori') closeModal();
+    // Tutup jika klik di luar card (backdrop atau wrapper), bukan di dalam form
+    const card = document.querySelector('#modal-kategori .relative') as HTMLElement | null;
+    if (card && !card.contains(e.target as Node)) closeModal();
   }
   (window as any).handleModalClick = handleModalClick;
+  (window as any).closeModal = closeModal;
 
   document.getElementById('btn-tambah-kategori')?.addEventListener('click', () => openModal());
+
+  // ── Swipe-to-dismiss bottom sheet ────────────────────────
+  const modalCard  = document.querySelector('#modal-kategori .relative') as HTMLElement;
+  const dragHandle = document.getElementById('modal-drag-handle')!;
+  let isDragging   = false;
+  let touchStartY  = 0;
+  let touchLastY   = 0;
+
+  dragHandle.addEventListener('touchstart', (e) => {
+    isDragging  = true;
+    touchStartY = e.touches[0].clientY;
+    touchLastY  = touchStartY;
+    modalCard.style.transition = 'none';
+  }, { passive: true });
+
+  // touchmove & touchend dilisten di document agar gesture tetap berjalan
+  // meskipun jari keluar dari area handle
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    touchLastY = e.touches[0].clientY;
+    const delta = touchLastY - touchStartY;
+    if (delta > 0) modalCard.style.transform = `translateY(${delta}px)`;
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    const delta = touchLastY - touchStartY;
+    modalCard.style.transition = 'transform 0.25s ease';
+    if (delta > 80) {
+      // Geser cukup jauh → animasikan keluar lalu tutup
+      modalCard.style.transform = 'translateY(120%)';
+      setTimeout(closeModal, 250);
+    } else {
+      // Belum cukup → snap kembali ke posisi semula
+      modalCard.style.transform = '';
+      setTimeout(() => { modalCard.style.transition = ''; }, 250);
+    }
+  }, { passive: true });
 
   // Sync emoji preview
   document.getElementById('input-emoji')?.addEventListener('input', (e) => {
