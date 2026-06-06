@@ -5,7 +5,7 @@ import Toast from '../components/ui/Toast.astro';
 import SmartInput from '../components/ui/SmartInput.astro';
 ---
 
-<AppLayout title="Tambah Transaksi" activeNav="tambah">
+<AppLayout title="Tambah Transaksi" showFab={false}>
   <Toast />
 
   <header class="px-4 pt-8 pb-4">
@@ -14,6 +14,49 @@ import SmartInput from '../components/ui/SmartInput.astro';
   </header>
 
   <SmartInput />
+
+  <!-- Multi-item preview (muncul ketika AI mendeteksi lebih dari 1 item) -->
+  <div id="multi-preview" class="hidden px-4 mb-3">
+    <div class="bg-white border border-blue-200 rounded-2xl p-4 shadow-sm">
+
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <p class="text-sm font-semibold text-blue-900">AI mendeteksi <span id="multi-count">0</span> item</p>
+        </div>
+        <button type="button" id="btn-multi-close" class="text-gray-400 hover:text-gray-600 p-1 -mr-1 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="multi-items-list" class="flex flex-col gap-2 mb-3"></div>
+
+      <div class="flex items-center justify-between pt-2.5 border-t border-gray-100 mb-3">
+        <span class="text-xs text-gray-500">Total estimasi</span>
+        <span id="multi-total" class="text-sm font-bold text-gray-800"></span>
+      </div>
+
+      <p id="multi-error" class="hidden text-xs text-rose-500 mb-2 px-0.5"></p>
+
+      <div class="flex gap-2">
+        <button type="button" id="btn-merge"
+          class="flex-1 py-2.5 px-2 rounded-xl border border-blue-600 text-blue-600 text-sm font-semibold hover:bg-blue-50 active:scale-[0.98] transition-all">
+          Gabung Jadi 1
+        </button>
+        <button type="button" id="btn-save-all"
+          class="flex-1 py-2.5 px-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none">
+          Simpan Terpisah
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <div class="px-4">
     <Card>
@@ -152,6 +195,25 @@ import SmartInput from '../components/ui/SmartInput.astro';
   const smartSpinner = document.getElementById('smart-prompt-spinner') as Element;
   const smartError   = document.getElementById('smart-prompt-error')   as HTMLParagraphElement;
 
+  const multiPreview   = document.getElementById('multi-preview')    as HTMLDivElement;
+  const multiCount     = document.getElementById('multi-count')      as HTMLSpanElement;
+  const multiTotal     = document.getElementById('multi-total')      as HTMLSpanElement;
+  const multiItemsList = document.getElementById('multi-items-list') as HTMLDivElement;
+  const multiError     = document.getElementById('multi-error')      as HTMLParagraphElement;
+  const btnMerge       = document.getElementById('btn-merge')        as HTMLButtonElement;
+  const btnSaveAll     = document.getElementById('btn-save-all')     as HTMLButtonElement;
+  const btnMultiClose  = document.getElementById('btn-multi-close')  as HTMLButtonElement;
+
+  type ParsedItem = {
+    type: 'income' | 'expense';
+    amount: number;
+    category_name: string;
+    description: string;
+    transaction_date: string;
+  };
+
+  let multiItems: ParsedItem[] = [];
+
   // Enable tombol hanya jika textarea tidak kosong
   smartText.addEventListener('input', () => {
     smartBtn.disabled = smartText.value.trim() === '';
@@ -173,10 +235,82 @@ import SmartInput from '../components/ui/SmartInput.astro';
     smartError.classList.remove('hidden');
   }
 
+  function matchCategory(type: 'income' | 'expense', categoryName: string) {
+    const aiCat = categoryName.toLowerCase();
+    return (
+      categories.find((c) => c.type === type && c.name.toLowerCase().includes(aiCat)) ??
+      categories.find((c) => c.type === type && aiCat.includes(c.name.toLowerCase())) ??
+      null
+    );
+  }
+
+  function autofillForm(item: ParsedItem) {
+    const type: 'income' | 'expense' = item.type === 'income' ? 'income' : 'expense';
+    setType(type);
+    if (item.amount) {
+      (document.getElementById('input-amount') as HTMLInputElement).value = String(item.amount);
+    }
+    if (item.transaction_date) {
+      (document.getElementById('input-date') as HTMLInputElement).value = item.transaction_date;
+    }
+    if (item.description) {
+      (document.getElementById('input-desc') as HTMLTextAreaElement).value = item.description;
+    }
+    if (item.category_name) {
+      const matched = matchCategory(type, item.category_name);
+      (document.getElementById('input-category') as HTMLSelectElement).value = matched?.id ?? '';
+    }
+  }
+
+  function hideMultiPreview() {
+    multiPreview.classList.add('hidden');
+    multiItemsList.innerHTML = '';
+    multiError.classList.add('hidden');
+    multiItems = [];
+  }
+
+  function showMultiPreview(items: ParsedItem[]) {
+    multiItems = items;
+    multiCount.textContent = String(items.length);
+
+    const total = items.reduce((sum, item) => sum + item.amount, 0);
+    multiTotal.textContent = 'Rp ' + total.toLocaleString('id-ID');
+    btnSaveAll.textContent = `Simpan ${items.length} Terpisah`;
+    multiError.classList.add('hidden');
+
+    multiItemsList.innerHTML = items.map((item, idx) => {
+      const isExpense = item.type !== 'income';
+      const matched = item.category_name ? matchCategory(item.type as 'income' | 'expense', item.category_name) : null;
+      const filtered = categories.filter((c) => c.type === item.type);
+      const options = filtered
+        .map((c) => `<option value="${c.id}"${matched?.id === c.id ? ' selected' : ''}>${c.icon ? c.icon + ' ' : ''}${c.name}</option>`)
+        .join('');
+
+      return `
+        <div class="p-3 bg-gray-50 rounded-xl" data-idx="${idx}">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <span class="text-sm font-medium text-gray-800 leading-snug">${item.description || 'Item ' + (idx + 1)}</span>
+            <span class="text-sm font-semibold whitespace-nowrap ${isExpense ? 'text-rose-600' : 'text-emerald-600'}">
+              ${isExpense ? '-' : '+'}Rp ${item.amount.toLocaleString('id-ID')}
+            </span>
+          </div>
+          <select class="multi-item-cat w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white appearance-none" data-idx="${idx}">
+            <option value="">Pilih kategori...</option>
+            ${options}
+          </select>
+        </div>
+      `;
+    }).join('');
+
+    multiPreview.classList.remove('hidden');
+    multiPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   smartBtn.addEventListener('click', async () => {
     const prompt = smartText.value.trim();
     if (!prompt) return;
 
+    hideMultiPreview();
     setSmartLoading(true);
     smartError.classList.add('hidden');
 
@@ -198,42 +332,85 @@ import SmartInput from '../components/ui/SmartInput.astro';
       return;
     }
 
-    // Autofill: tipe transaksi (sekaligus refresh dropdown kategori)
-    const type: 'income' | 'expense' = data.type === 'income' ? 'income' : 'expense';
+    const items: ParsedItem[] = Array.isArray(data.items) ? data.items : [];
+    if (items.length === 0) {
+      showSmartError('AI tidak dapat mendeteksi transaksi. Coba dengan kalimat yang lebih jelas.');
+      return;
+    }
+
+    if (items.length === 1) {
+      autofillForm(items[0]);
+      toast('Form berhasil diisi AI! Periksa dan koreksi jika perlu.', 'success');
+    } else {
+      showMultiPreview(items);
+    }
+  });
+
+  btnMultiClose.addEventListener('click', () => {
+    hideMultiPreview();
+  });
+
+  btnMerge.addEventListener('click', () => {
+    if (multiItems.length === 0) return;
+
+    const count = multiItems.length;
+    const total = multiItems.reduce((sum, item) => sum + item.amount, 0);
+    const firstItem = multiItems[0];
+    const mergedDesc = multiItems.map((i) => i.description).filter(Boolean).join(', ');
+
+    // Ambil kategori dari dropdown item pertama sebelum preview disembunyikan
+    const firstSelect = multiItemsList.querySelector('.multi-item-cat') as HTMLSelectElement | null;
+    const firstCatId = firstSelect?.value ?? '';
+
+    hideMultiPreview();
+
+    const type: 'income' | 'expense' = firstItem.type === 'income' ? 'income' : 'expense';
     setType(type);
+    (document.getElementById('input-amount') as HTMLInputElement).value = String(total);
+    (document.getElementById('input-date') as HTMLInputElement).value = firstItem.transaction_date;
+    (document.getElementById('input-desc') as HTMLTextAreaElement).value = mergedDesc;
+    (document.getElementById('input-category') as HTMLSelectElement).value = firstCatId;
 
-    // Autofill: nominal
-    if (data.amount) {
-      (document.getElementById('input-amount') as HTMLInputElement).value = String(data.amount);
+    toast(`${count} item digabung menjadi 1 transaksi. Periksa dan koreksi jika perlu.`, 'success');
+  });
+
+  btnSaveAll.addEventListener('click', async () => {
+    if (multiItems.length === 0) return;
+
+    const selects = Array.from(multiItemsList.querySelectorAll('.multi-item-cat')) as HTMLSelectElement[];
+    const catIds = selects.map((s) => s.value);
+    const missingIdx = catIds.findIndex((id) => !id);
+
+    if (missingIdx !== -1) {
+      multiError.textContent = `Pilih kategori untuk semua item (item ${missingIdx + 1} belum dipilih).`;
+      multiError.classList.remove('hidden');
+      return;
     }
 
-    // Autofill: tanggal
-    if (data.transaction_date) {
-      (document.getElementById('input-date') as HTMLInputElement).value = data.transaction_date;
+    multiError.classList.add('hidden');
+    btnSaveAll.disabled = true;
+    btnSaveAll.textContent = 'Menyimpan...';
+    btnMerge.disabled = true;
+
+    const records = multiItems.map((item, idx) => ({
+      user_id:          session.user.id,
+      amount:           item.amount,
+      category_id:      catIds[idx],
+      transaction_date: item.transaction_date,
+      description:      item.description || null,
+    }));
+
+    const { error } = await supabase.from('transactions').insert(records);
+
+    if (error) {
+      toast('Gagal menyimpan. Periksa koneksi internet Anda.', 'error');
+      btnSaveAll.disabled = false;
+      btnSaveAll.textContent = `Simpan ${multiItems.length} Terpisah`;
+      btnMerge.disabled = false;
+    } else {
+      toast(`${records.length} transaksi berhasil disimpan!`, 'success');
+      setTimeout(() => window.location.replace(import.meta.env.BASE_URL), 1200);
     }
-
-    // Autofill: catatan/deskripsi
-    if (data.description) {
-      (document.getElementById('input-desc') as HTMLTextAreaElement).value = data.description;
-    }
-
-    // Smart category matching (F09): coba exact substring dulu, lalu kebalikannya
-    if (data.category_name) {
-      const aiCat = (data.category_name as string).toLowerCase();
-      const matched =
-        categories.find((c) => c.type === type && c.name.toLowerCase().includes(aiCat)) ??
-        categories.find((c) => c.type === type && aiCat.includes(c.name.toLowerCase()));
-
-      const catSelect = document.getElementById('input-category') as HTMLSelectElement;
-      if (matched) {
-        catSelect.value = matched.id;
-      } else {
-        // Fallback PRD F09: kosongkan dropdown agar user pilih manual
-        catSelect.value = '';
-      }
-    }
-
-    toast('Form berhasil diisi AI! Periksa dan koreksi jika perlu.', 'success');
   });
 
   // ── Submit form ───────────────────────────────────────────

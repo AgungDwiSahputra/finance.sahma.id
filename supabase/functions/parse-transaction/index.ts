@@ -32,17 +32,22 @@ serve(async (req) => {
       return ok({ error: 'Konfigurasi server tidak lengkap. Hubungi administrator.' });
     }
 
-    const systemInstruction = `Anda adalah asisten keuangan cerdas. Ekstrak informasi transaksi keuangan dari cerita berikut ke dalam format JSON.
+    const systemInstruction = `Anda adalah asisten keuangan cerdas. Ekstrak SEMUA transaksi dari cerita berikut.
 Tanggal hari ini: ${currentDate}.
 Jika teks menyebut kata relatif seperti "tadi", "kemarin", "minggu lalu", gunakan tanggal hari ini sebagai acuan perhitungan.
+Jika ada beberapa barang atau item berbeda yang disebutkan, pisahkan masing-masing sebagai item terpisah dalam array "items".
 
-Format JSON yang WAJIB dikembalikan (tanpa teks lain, tanpa markdown, hanya objek JSON murni):
+Format JSON yang WAJIB dikembalikan (selalu gunakan array "items", meski hanya 1 transaksi):
 {
-  "type": "income" atau "expense",
-  "amount": angka bulat tanpa titik atau koma (contoh: 25000),
-  "category_name": "nama kategori yang paling sesuai dalam Bahasa Indonesia (contoh: Makan & Minum, Transportasi, Belanja, Hiburan, Kesehatan, Gaji, dll)",
-  "description": "deskripsi singkat transaksi dalam Bahasa Indonesia",
-  "transaction_date": "YYYY-MM-DD"
+  "items": [
+    {
+      "type": "income" atau "expense",
+      "amount": angka bulat tanpa titik atau koma (contoh: 25000),
+      "category_name": "nama kategori yang paling sesuai dalam Bahasa Indonesia (contoh: Makan & Minum, Transportasi, Belanja, Hiburan, Kesehatan, Gaji, dll)",
+      "description": "deskripsi singkat item ini dalam Bahasa Indonesia",
+      "transaction_date": "YYYY-MM-DD"
+    }
+  ]
 }`;
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -82,6 +87,9 @@ Format JSON yang WAJIB dikembalikan (tanpa teks lain, tanpa markdown, hanya obje
 
     // Validasi JSON sebelum dikirim ke client
     const parsed = JSON.parse(resultText);
+    if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+      return ok({ error: 'AI tidak dapat mendeteksi transaksi. Coba ulangi dengan kalimat yang lebih jelas.' });
+    }
     return ok(parsed);
 
   } catch (e) {

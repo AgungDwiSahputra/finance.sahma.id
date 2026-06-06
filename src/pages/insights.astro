@@ -1,0 +1,343 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import Toast from '../components/ui/Toast.astro';
+---
+
+<!-- Tailwind safelist untuk kelas dinamis rasio kesehatan -->
+<!-- bg-emerald-50 text-emerald-600 text-emerald-800 bg-blue-50 text-blue-600 text-blue-800 bg-amber-50 text-amber-600 text-amber-800 bg-rose-50 text-rose-600 text-rose-800 -->
+
+<AppLayout title="AI Insights" activeNav="insights">
+  <Toast />
+
+  <!-- Header -->
+  <header class="px-4 pt-8 pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-gray-900 font-bold text-xl">AI Insights</h1>
+        <p class="text-gray-400 text-sm mt-0.5">Analisis keuangan berbasis AI</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-4 flex flex-col gap-4 pb-6">
+
+    <!-- ── FITUR 1: Analisis Keuangan ──────────────────────────── -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-gray-800">Analisis Keuangan</h2>
+          <p class="text-xs text-gray-400">Pola pengeluaran & rekomendasi personal</p>
+        </div>
+      </div>
+
+      <!-- Filter bulan -->
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1.5" for="analysis-month">Pilih Bulan</label>
+        <select id="analysis-month"
+          class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+          <option value="">Memuat...</option>
+        </select>
+      </div>
+
+      <!-- Error -->
+      <p id="analysis-error" class="hidden text-xs text-rose-500 mb-2 px-0.5"></p>
+
+      <!-- Tombol analisis -->
+      <button id="btn-analysis" disabled
+        class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+        </svg>
+        <span id="analysis-btn-label">Hasilkan Analisis</span>
+      </button>
+
+      <!-- Hasil analisis (tersembunyi sampai analisis selesai) -->
+      <div id="analysis-result" class="hidden mt-4">
+        <div class="flex items-center gap-2 mb-3 pt-3 border-t border-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+          </svg>
+          <p id="result-title" class="text-sm font-semibold text-gray-700"></p>
+        </div>
+        <div class="flex flex-col gap-2.5">
+          <div class="bg-blue-50 rounded-xl p-3.5">
+            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Kondisi Keuangan</p>
+            <p id="result-kondisi" class="text-sm text-gray-700 leading-relaxed"></p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-3.5">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Pola Pengeluaran</p>
+            <p id="result-pola" class="text-sm text-gray-700 leading-relaxed"></p>
+          </div>
+          <div id="result-rasio-card" class="rounded-xl p-3.5">
+            <p id="result-rasio-label" class="text-xs font-semibold uppercase tracking-wide mb-1">Rasio Kesehatan</p>
+            <p id="result-rasio" class="text-sm leading-relaxed"></p>
+          </div>
+          <div class="bg-amber-50 rounded-xl p-3.5">
+            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">💡 Tips untuk Anda</p>
+            <ul id="result-tips" class="flex flex-col gap-1.5"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FITUR 2: Prediksi Anggaran (Segera Hadir) ───────────── -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 opacity-60 select-none">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="text-sm font-bold text-gray-800">Prediksi Anggaran</h2>
+          <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Segera Hadir</span>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mb-3 leading-relaxed">
+        Estimasi pengeluaran bulan depan berdasarkan tren 3 bulan terakhir.
+      </p>
+      <button disabled class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-400 text-sm font-semibold cursor-not-allowed">
+        🔮 Prediksi Bulan Depan
+      </button>
+    </div>
+
+    <!-- ── FITUR 3: Deteksi Anomali (Segera Hadir) ────────────── -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 opacity-60 select-none">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-8 h-8 bg-rose-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="text-sm font-bold text-gray-800">Deteksi Anomali</h2>
+          <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Segera Hadir</span>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mb-3 leading-relaxed">
+        Deteksi pengeluaran tidak wajar berdasarkan pola kebiasaan bulan ini.
+      </p>
+      <button disabled class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-400 text-sm font-semibold cursor-not-allowed">
+        🕵️ Cek Anomali Bulan Ini
+      </button>
+    </div>
+
+  </div>
+</AppLayout>
+
+<script>
+  import { supabase }    from '../lib/supabase';
+  import { requireAuth } from '../lib/auth-guard';
+
+  const toast = (msg: string, type: 'success' | 'error' | 'info' = 'info') =>
+    (window as any).showToast?.(msg, type);
+
+  const session = await requireAuth();
+  if (!session) throw new Error('redirect');
+
+  // ── Element refs ──────────────────────────────────────────
+  const monthSelect      = document.getElementById('analysis-month')     as HTMLSelectElement;
+  const btnAnalysis      = document.getElementById('btn-analysis')       as HTMLButtonElement;
+  const analysisError    = document.getElementById('analysis-error')     as HTMLElement;
+  const analysisResult   = document.getElementById('analysis-result')    as HTMLElement;
+  const analysisBtnLabel = document.getElementById('analysis-btn-label') as HTMLElement;
+
+  const resultTitle      = document.getElementById('result-title')       as HTMLElement;
+  const resultKondisi    = document.getElementById('result-kondisi')     as HTMLElement;
+  const resultPola       = document.getElementById('result-pola')        as HTMLElement;
+  const resultRasioCard  = document.getElementById('result-rasio-card')  as HTMLElement;
+  const resultRasioLabel = document.getElementById('result-rasio-label') as HTMLElement;
+  const resultRasio      = document.getElementById('result-rasio')       as HTMLElement;
+  const resultTips       = document.getElementById('result-tips')        as HTMLElement;
+
+  // ── Populate dropdown 12 bulan terakhir ───────────────────
+  const now = new Date();
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    return { value, label };
+  });
+
+  monthSelect.innerHTML = months
+    .map((m, i) => `<option value="${m.value}"${i === 0 ? ' selected' : ''}>${m.label}</option>`)
+    .join('');
+
+  btnAnalysis.disabled = false;
+
+  // ── Helpers ───────────────────────────────────────────────
+  function getMonthRange(ym: string) {
+    const [y, m] = ym.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    return {
+      from: `${ym}-01`,
+      to:   `${ym}-${String(lastDay).padStart(2, '0')}`,
+    };
+  }
+
+  function setLoading(loading: boolean) {
+    btnAnalysis.disabled = loading;
+    if (loading) {
+      btnAnalysis.innerHTML = `
+        <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+        </svg>
+        Menganalisis...
+      `;
+    } else {
+      btnAnalysis.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+        </svg>
+        <span id="analysis-btn-label">Hasilkan Analisis</span>
+      `;
+    }
+  }
+
+  function showError(msg: string) {
+    analysisError.textContent = msg;
+    analysisError.classList.remove('hidden');
+  }
+
+  // ── Render hasil analisis ─────────────────────────────────
+  function renderAnalysis(result: any, monthLabel: string) {
+    resultTitle.textContent = `Hasil Analisis ${monthLabel}`;
+    resultKondisi.textContent = result.kondisi ?? '';
+    resultPola.textContent    = result.pola_pengeluaran ?? '';
+
+    const rasioText = result.rasio_kesehatan ?? '';
+    resultRasio.textContent = rasioText;
+
+    type RasioKey = 'Sangat Sehat' | 'Sehat' | 'Perlu Perhatian' | 'Kritis';
+    const rasioKey = (['Sangat Sehat', 'Sehat', 'Perlu Perhatian', 'Kritis'] as RasioKey[])
+      .find(l => rasioText.includes(`[${l}]`)) ?? 'Sehat';
+
+    const rasioStyle: Record<RasioKey, { card: string; badge: string; text: string }> = {
+      'Sangat Sehat':    { card: 'bg-emerald-50 rounded-xl p-3.5', badge: 'text-xs font-semibold uppercase tracking-wide mb-1 text-emerald-600', text: 'text-sm leading-relaxed text-emerald-800' },
+      'Sehat':           { card: 'bg-blue-50 rounded-xl p-3.5',    badge: 'text-xs font-semibold uppercase tracking-wide mb-1 text-blue-600',    text: 'text-sm leading-relaxed text-blue-800'    },
+      'Perlu Perhatian': { card: 'bg-amber-50 rounded-xl p-3.5',   badge: 'text-xs font-semibold uppercase tracking-wide mb-1 text-amber-600',   text: 'text-sm leading-relaxed text-amber-800'   },
+      'Kritis':          { card: 'bg-rose-50 rounded-xl p-3.5',    badge: 'text-xs font-semibold uppercase tracking-wide mb-1 text-rose-600',    text: 'text-sm leading-relaxed text-rose-800'    },
+    };
+
+    const rs = rasioStyle[rasioKey];
+    resultRasioCard.className  = rs.card;
+    resultRasioLabel.className = rs.badge;
+    resultRasio.className      = rs.text;
+
+    resultTips.innerHTML = '';
+    const tips: string[] = Array.isArray(result.tips) ? result.tips : [];
+    for (const tip of tips) {
+      const li = document.createElement('li');
+      li.className = 'flex items-start gap-2';
+      const dot = document.createElement('span');
+      dot.className = 'text-amber-500 mt-0.5 flex-shrink-0';
+      dot.textContent = '•';
+      const txt = document.createElement('span');
+      txt.className = 'text-sm text-amber-900';
+      txt.textContent = tip;
+      li.appendChild(dot);
+      li.appendChild(txt);
+      resultTips.appendChild(li);
+    }
+
+    analysisResult.classList.remove('hidden');
+    analysisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Click handler ─────────────────────────────────────────
+  btnAnalysis.addEventListener('click', async () => {
+    const selectedMonth = monthSelect.value;
+    if (!selectedMonth) return;
+
+    const monthLabel = monthSelect.options[monthSelect.selectedIndex].text;
+    const { from, to } = getMonthRange(selectedMonth);
+
+    analysisError.classList.add('hidden');
+    analysisResult.classList.add('hidden');
+    setLoading(true);
+
+    // 1. Ambil transaksi bulan terpilih
+    const { data: txs, error: fetchError } = await supabase
+      .from('transactions')
+      .select('amount, categories!inner(name, type)')
+      .eq('user_id', session.user.id)
+      .gte('transaction_date', from)
+      .lte('transaction_date', to);
+
+    if (fetchError || !txs) {
+      setLoading(false);
+      showError('Gagal mengambil data transaksi. Periksa koneksi dan coba lagi.');
+      return;
+    }
+
+    if (txs.length === 0) {
+      setLoading(false);
+      showError(`Tidak ada transaksi di ${monthLabel}. Pilih bulan lain.`);
+      return;
+    }
+
+    // 2. Agregasi per kategori (hemat token — tidak kirim baris mentah ke AI)
+    const expenseMap = new Map<string, { total: number; count: number }>();
+    const incomeMap  = new Map<string, { total: number; count: number }>();
+    let totalExpense = 0;
+    let totalIncome  = 0;
+
+    for (const tx of txs) {
+      const cat  = tx.categories as any;
+      const name = (cat?.name  as string) ?? 'Lain-lain';
+      const type = (cat?.type  as string) ?? 'expense';
+      const amt  = Number(tx.amount);
+
+      if (type === 'expense') {
+        totalExpense += amt;
+        const prev = expenseMap.get(name) ?? { total: 0, count: 0 };
+        expenseMap.set(name, { total: prev.total + amt, count: prev.count + 1 });
+      } else {
+        totalIncome += amt;
+        const prev = incomeMap.get(name) ?? { total: 0, count: 0 };
+        incomeMap.set(name, { total: prev.total + amt, count: prev.count + 1 });
+      }
+    }
+
+    const summary = {
+      total_income:  totalIncome,
+      total_expense: totalExpense,
+      expense_by_category: [...expenseMap.entries()]
+        .map(([category, d]) => ({ category, ...d }))
+        .sort((a, b) => b.total - a.total),
+      income_by_category: [...incomeMap.entries()]
+        .map(([category, d]) => ({ category, ...d })),
+    };
+
+    // 3. Panggil edge function
+    const { data, error: aiError } = await supabase.functions.invoke('ai-insights', {
+      body: { mode: 'analysis', month_label: monthLabel, summary },
+    });
+
+    setLoading(false);
+
+    if (aiError || !data) {
+      showError('Gagal menghubungi layanan AI. Periksa koneksi dan coba lagi.');
+      return;
+    }
+    if (data.error) {
+      showError(data.error);
+      return;
+    }
+
+    renderAnalysis(data.result, monthLabel);
+    toast('Analisis selesai!', 'success');
+  });
+</script>
