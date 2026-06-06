@@ -91,46 +91,134 @@ import Toast from '../components/ui/Toast.astro';
       </div>
     </div>
 
-    <!-- ── FITUR 2: Prediksi Anggaran (Segera Hadir) ───────────── -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 opacity-60 select-none">
-      <div class="flex items-center gap-3 mb-3">
+    <!-- ── FITUR 2: Prediksi Anggaran ────────────────────────── -->
+    <!-- Tailwind safelist prediksi: text-rose-600 text-emerald-600 text-gray-400 bg-purple-50 text-purple-600 text-purple-800 -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+
+      <div class="flex items-center gap-3 mb-4">
         <div class="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
         </div>
-        <div class="flex items-center gap-2 flex-wrap">
+        <div>
           <h2 class="text-sm font-bold text-gray-800">Prediksi Anggaran</h2>
-          <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Segera Hadir</span>
+          <p class="text-xs text-gray-400">Estimasi pengeluaran bulan depan</p>
         </div>
       </div>
-      <p class="text-xs text-gray-400 mb-3 leading-relaxed">
-        Estimasi pengeluaran bulan depan berdasarkan tren 3 bulan terakhir.
-      </p>
-      <button disabled class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-400 text-sm font-semibold cursor-not-allowed">
-        🔮 Prediksi Bulan Depan
+
+      <!-- Badge peringatan data kurang (muncul jika < 3 bulan) -->
+      <div id="prediction-warning" class="hidden mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+        <p id="prediction-warning-text" class="text-xs text-amber-800 leading-relaxed"></p>
+      </div>
+
+      <!-- Error -->
+      <p id="prediction-error" class="hidden text-xs text-rose-500 mb-2 px-0.5"></p>
+
+      <!-- Tombol prediksi -->
+      <button id="btn-prediction"
+        class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+        <span id="prediction-btn-label">Prediksi Bulan Depan</span>
       </button>
+
+      <!-- Hasil prediksi (tersembunyi sampai selesai) -->
+      <div id="prediction-result" class="hidden mt-4">
+        <div class="flex items-center gap-2 mb-3 pt-3 border-t border-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+          </svg>
+          <p id="prediction-result-title" class="text-sm font-semibold text-gray-700"></p>
+        </div>
+        <div class="flex flex-col gap-2.5">
+
+          <!-- Ringkasan tren -->
+          <div class="bg-purple-50 rounded-xl p-3.5">
+            <p class="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1">Tren Pengeluaran</p>
+            <p id="prediction-tren" class="text-sm text-purple-900 leading-relaxed"></p>
+          </div>
+
+          <!-- Total prediksi -->
+          <div class="bg-gray-900 rounded-xl p-4 text-center">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Estimasi Total Pengeluaran</p>
+            <p id="prediction-total" class="text-2xl font-bold text-white"></p>
+          </div>
+
+          <!-- Per kategori -->
+          <div class="bg-gray-50 rounded-xl p-3.5">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2.5">Rincian per Kategori</p>
+            <div id="prediction-categories" class="flex flex-col gap-1.5"></div>
+          </div>
+
+          <!-- Catatan AI (opsional) -->
+          <div id="prediction-notes-card" class="hidden bg-amber-50 rounded-xl p-3.5">
+            <p class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">📝 Catatan AI</p>
+            <p id="prediction-notes" class="text-sm text-amber-900 leading-relaxed"></p>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <!-- ── FITUR 3: Deteksi Anomali (Segera Hadir) ────────────── -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 opacity-60 select-none">
-      <div class="flex items-center gap-3 mb-3">
+    <!-- ── FITUR 3: Deteksi Anomali ──────────────────────────── -->
+    <!-- Tailwind safelist anomali: bg-rose-50 border-rose-200 bg-rose-100 text-rose-700 text-rose-800 bg-amber-50 border-amber-200 bg-amber-100 text-amber-700 text-amber-800 bg-blue-50 border-blue-200 bg-blue-100 text-blue-700 text-blue-800 -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+
+      <div class="flex items-center gap-3 mb-4">
         <div class="w-8 h-8 bg-rose-100 rounded-xl flex items-center justify-center flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         </div>
-        <div class="flex items-center gap-2 flex-wrap">
+        <div>
           <h2 class="text-sm font-bold text-gray-800">Deteksi Anomali</h2>
-          <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Segera Hadir</span>
+          <p class="text-xs text-gray-400">Pengeluaran tidak wajar bulan ini</p>
         </div>
       </div>
-      <p class="text-xs text-gray-400 mb-3 leading-relaxed">
-        Deteksi pengeluaran tidak wajar berdasarkan pola kebiasaan bulan ini.
-      </p>
-      <button disabled class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-400 text-sm font-semibold cursor-not-allowed">
-        🕵️ Cek Anomali Bulan Ini
+
+      <!-- Error -->
+      <p id="anomaly-error" class="hidden text-xs text-rose-500 mb-2 px-0.5"></p>
+
+      <!-- Tombol deteksi -->
+      <button id="btn-anomaly"
+        class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <span id="anomaly-btn-label">Cek Anomali Bulan Ini</span>
       </button>
+
+      <!-- Hasil deteksi (tersembunyi sampai selesai) -->
+      <div id="anomaly-result" class="hidden mt-4">
+        <div class="flex items-center gap-2 mb-3 pt-3 border-t border-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+          </svg>
+          <p id="anomaly-result-title" class="text-sm font-semibold text-gray-700"></p>
+        </div>
+
+        <!-- State: tidak ada anomali -->
+        <div id="anomaly-no-anomaly" class="hidden bg-emerald-50 rounded-xl p-4 text-center">
+          <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <p class="text-sm font-semibold text-emerald-800 mb-1">Tidak Ada Anomali!</p>
+          <p id="anomaly-no-anomaly-text" class="text-xs text-emerald-700 leading-relaxed"></p>
+        </div>
+
+        <!-- State: ada anomali -->
+        <div id="anomaly-has-anomaly" class="hidden">
+          <p id="anomaly-summary" class="text-xs text-gray-500 mb-3"></p>
+          <div id="anomaly-list" class="flex flex-col gap-2.5"></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -256,6 +344,11 @@ import Toast from '../components/ui/Toast.astro';
     analysisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
+  // ── Format helper (dipakai bersama analisis & prediksi) ──
+  function formatRupiah(n: number) {
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  }
+
   // ── Click handler ─────────────────────────────────────────
   btnAnalysis.addEventListener('click', async () => {
     const selectedMonth = monthSelect.value;
@@ -339,5 +432,447 @@ import Toast from '../components/ui/Toast.astro';
 
     renderAnalysis(data.result, monthLabel);
     toast('Analisis selesai!', 'success');
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // FITUR 2 — Prediksi Anggaran
+  // ════════════════════════════════════════════════════════════
+  const btnPrediction         = document.getElementById('btn-prediction')          as HTMLButtonElement;
+  const predictionError       = document.getElementById('prediction-error')        as HTMLElement;
+  const predictionResult      = document.getElementById('prediction-result')       as HTMLElement;
+  const predictionWarning     = document.getElementById('prediction-warning')      as HTMLElement;
+  const predictionWarningTxt  = document.getElementById('prediction-warning-text') as HTMLElement;
+  const predictionResultTitle = document.getElementById('prediction-result-title') as HTMLElement;
+  const predictionTren        = document.getElementById('prediction-tren')         as HTMLElement;
+  const predictionTotal       = document.getElementById('prediction-total')        as HTMLElement;
+  const predictionCategories  = document.getElementById('prediction-categories')   as HTMLElement;
+  const predictionNotesCard   = document.getElementById('prediction-notes-card')   as HTMLElement;
+  const predictionNotes       = document.getElementById('prediction-notes')        as HTMLElement;
+
+  function setPredictionLoading(loading: boolean) {
+    btnPrediction.disabled = loading;
+    const label = document.getElementById('prediction-btn-label')!;
+    if (loading) {
+      btnPrediction.innerHTML = `
+        <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+        </svg>
+        <span>Memprediksi...</span>`;
+    } else {
+      btnPrediction.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+        <span id="prediction-btn-label">Prediksi Bulan Depan</span>`;
+    }
+  }
+
+  function renderPrediction(result: any, nextMonthLabel: string) {
+    predictionResultTitle.textContent = `Prediksi ${nextMonthLabel}`;
+    predictionTren.textContent        = result.ringkasan_tren ?? '';
+    predictionTotal.textContent       = formatRupiah(Number(result.prediksi_total ?? 0));
+
+    predictionCategories.innerHTML = '';
+    const cats: any[] = Array.isArray(result.prediksi_per_kategori) ? result.prediksi_per_kategori : [];
+
+    for (const cat of cats) {
+      type TrendKey = 'naik' | 'turun' | 'stabil';
+      const trendCfg: Record<TrendKey, { icon: string; cls: string }> = {
+        naik:   { icon: '↑', cls: 'text-rose-600 font-bold w-4 text-center flex-shrink-0' },
+        turun:  { icon: '↓', cls: 'text-emerald-600 font-bold w-4 text-center flex-shrink-0' },
+        stabil: { icon: '→', cls: 'text-gray-400 font-medium w-4 text-center flex-shrink-0' },
+      };
+      const cfg = trendCfg[(cat.tren as TrendKey)] ?? trendCfg.stabil;
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between py-2 px-2.5 bg-white rounded-lg border border-gray-100';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'text-sm text-gray-700 truncate flex-1 mr-2';
+      nameSpan.textContent = cat.category;
+
+      const right = document.createElement('div');
+      right.className = 'flex items-center gap-2 flex-shrink-0';
+
+      const trendSpan = document.createElement('span');
+      trendSpan.className = cfg.cls;
+      trendSpan.textContent = cfg.icon;
+
+      const amtSpan = document.createElement('span');
+      amtSpan.className = 'text-sm font-semibold text-gray-800';
+      amtSpan.textContent = formatRupiah(Number(cat.prediksi ?? 0));
+
+      right.appendChild(trendSpan);
+      right.appendChild(amtSpan);
+      row.appendChild(nameSpan);
+      row.appendChild(right);
+      predictionCategories.appendChild(row);
+    }
+
+    const catatan = result.catatan ?? '';
+    if (catatan.trim()) {
+      predictionNotes.textContent = catatan;
+      predictionNotesCard.classList.remove('hidden');
+    } else {
+      predictionNotesCard.classList.add('hidden');
+    }
+
+    predictionResult.classList.remove('hidden');
+    predictionResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  btnPrediction.addEventListener('click', async () => {
+    predictionError.classList.add('hidden');
+    predictionResult.classList.add('hidden');
+    predictionWarning.classList.add('hidden');
+    setPredictionLoading(true);
+
+    // Opsi A: 3 bulan penuh SEBELUM bulan berjalan
+    const today = new Date();
+    const threeMonths = Array.from({ length: 3 }, (_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth() - 1 - i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+      return { ym, label };
+    }).reverse(); // urutan: terlama → terbaru
+
+    const nextMonthDate  = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const nextMonthLabel = nextMonthDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+    const fromDate    = `${threeMonths[0].ym}-01`;
+    const [ly, lm]    = threeMonths[2].ym.split('-').map(Number);
+    const toDate      = `${threeMonths[2].ym}-${String(new Date(ly, lm, 0).getDate()).padStart(2, '0')}`;
+
+    const { data: txs, error: fetchError } = await supabase
+      .from('transactions')
+      .select('amount, transaction_date, categories!inner(name, type)')
+      .eq('user_id', session.user.id)
+      .gte('transaction_date', fromDate)
+      .lte('transaction_date', toDate);
+
+    if (fetchError || !txs) {
+      setPredictionLoading(false);
+      predictionError.textContent = 'Gagal mengambil data. Periksa koneksi dan coba lagi.';
+      predictionError.classList.remove('hidden');
+      return;
+    }
+
+    // Agregasi per bulan per kategori (hanya pengeluaran)
+    type MonthEntry = { total: number; catMap: Map<string, number> };
+    const monthMap = new Map<string, MonthEntry>();
+    for (const m of threeMonths) monthMap.set(m.ym, { total: 0, catMap: new Map() });
+
+    for (const tx of txs) {
+      const cat = tx.categories as any;
+      if (cat?.type !== 'expense') continue;
+      const ym    = (tx.transaction_date as string).substring(0, 7);
+      const entry = monthMap.get(ym);
+      if (!entry) continue;
+      const name = (cat?.name as string) ?? 'Lain-lain';
+      const amt  = Number(tx.amount);
+      entry.total += amt;
+      entry.catMap.set(name, (entry.catMap.get(name) ?? 0) + amt);
+    }
+
+    const availableMonths = threeMonths.filter(m => monthMap.get(m.ym)!.total > 0);
+    const missingMonths   = threeMonths.filter(m => monthMap.get(m.ym)!.total === 0);
+
+    // 0 bulan data → error
+    if (availableMonths.length === 0) {
+      setPredictionLoading(false);
+      predictionError.textContent = `Belum ada data pengeluaran di ${threeMonths.map(m => m.label).join(', ')}. Tambahkan transaksi terlebih dahulu.`;
+      predictionError.classList.remove('hidden');
+      return;
+    }
+
+    // < 3 bulan → tampilkan badge peringatan
+    if (availableMonths.length < 3) {
+      predictionWarningTxt.textContent = availableMonths.length === 2
+        ? `Data bulan ${missingMonths.map(m => m.label).join(' dan ')} tidak tersedia. Prediksi berdasarkan ${availableMonths.length} bulan — akurasi mungkin berkurang.`
+        : `Hanya data ${availableMonths[0].label} yang tersedia. Prediksi bersifat sangat estimatif.`;
+      predictionWarning.classList.remove('hidden');
+    }
+
+    // Susun payload history (hanya bulan yang ada datanya)
+    const history = availableMonths.map(m => {
+      const entry = monthMap.get(m.ym)!;
+      return {
+        month:         m.label,
+        total_expense: entry.total,
+        expense_by_category: [...entry.catMap.entries()]
+          .map(([category, total]) => ({ category, total }))
+          .sort((a, b) => b.total - a.total),
+      };
+    });
+
+    const { data, error: aiError } = await supabase.functions.invoke('ai-insights', {
+      body: {
+        mode:             'prediction',
+        next_month_label: nextMonthLabel,
+        months_available: availableMonths.length,
+        available_months: availableMonths.map(m => m.label),
+        missing_months:   missingMonths.map(m => m.label),
+        history,
+      },
+    });
+
+    setPredictionLoading(false);
+
+    if (aiError || !data) {
+      predictionError.textContent = 'Gagal menghubungi layanan AI. Periksa koneksi dan coba lagi.';
+      predictionError.classList.remove('hidden');
+      return;
+    }
+    if (data.error) {
+      predictionError.textContent = data.error;
+      predictionError.classList.remove('hidden');
+      return;
+    }
+
+    renderPrediction(data.result, nextMonthLabel);
+    toast('Prediksi selesai!', 'success');
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // FITUR 3 — Deteksi Anomali
+  // ════════════════════════════════════════════════════════════
+
+  // Jumlah transaksi terbesar yang dikirim ke AI untuk analisis outlier.
+  // Ubah angka ini sesuai kebutuhan tanpa perlu menyentuh logika lain.
+  const TOP_TRANSACTIONS_LIMIT = 5;
+
+  const btnAnomaly          = document.getElementById('btn-anomaly')           as HTMLButtonElement;
+  const anomalyError        = document.getElementById('anomaly-error')         as HTMLElement;
+  const anomalyResult       = document.getElementById('anomaly-result')        as HTMLElement;
+  const anomalyResultTitle  = document.getElementById('anomaly-result-title')  as HTMLElement;
+  const anomalyNoAnomaly    = document.getElementById('anomaly-no-anomaly')    as HTMLElement;
+  const anomalyNoAnomalyTxt = document.getElementById('anomaly-no-anomaly-text') as HTMLElement;
+  const anomalyHasAnomaly   = document.getElementById('anomaly-has-anomaly')   as HTMLElement;
+  const anomalySummary      = document.getElementById('anomaly-summary')       as HTMLElement;
+  const anomalyList         = document.getElementById('anomaly-list')          as HTMLElement;
+
+  function setAnomalyLoading(loading: boolean) {
+    btnAnomaly.disabled = loading;
+    if (loading) {
+      btnAnomaly.innerHTML = `
+        <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+        </svg>
+        <span>Mendeteksi...</span>`;
+    } else {
+      btnAnomaly.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <span id="anomaly-btn-label">Cek Anomali Bulan Ini</span>`;
+    }
+  }
+
+  function renderAnomaly(result: any, currentMonthLabel: string) {
+    anomalyResultTitle.textContent = `Hasil Deteksi ${currentMonthLabel}`;
+
+    const items: any[] = Array.isArray(result.anomali) ? result.anomali : [];
+    const ditemukan: boolean = result.anomali_ditemukan === true && items.length > 0;
+
+    if (!ditemukan) {
+      anomalyNoAnomaly.classList.remove('hidden');
+      anomalyHasAnomaly.classList.add('hidden');
+      anomalyNoAnomalyTxt.textContent = result.ringkasan ?? 'Pola pengeluaran bulan ini terlihat normal.';
+    } else {
+      anomalyHasAnomaly.classList.remove('hidden');
+      anomalyNoAnomaly.classList.add('hidden');
+      anomalySummary.textContent = result.ringkasan ?? '';
+
+      anomalyList.innerHTML = '';
+      type TingkatKey = 'tinggi' | 'sedang' | 'rendah';
+      const tingkatStyle: Record<TingkatKey, { card: string; badge: string; label: string }> = {
+        tinggi: { card: 'bg-rose-50 border border-rose-200',   badge: 'bg-rose-100 text-rose-700',   label: 'TINGGI'  },
+        sedang: { card: 'bg-amber-50 border border-amber-200', badge: 'bg-amber-100 text-amber-700', label: 'SEDANG'  },
+        rendah: { card: 'bg-blue-50 border border-blue-200',   badge: 'bg-blue-100 text-blue-700',   label: 'RENDAH'  },
+      };
+
+      for (const item of items) {
+        const key = (item.tingkat as TingkatKey) in tingkatStyle
+          ? (item.tingkat as TingkatKey)
+          : 'rendah';
+        const s = tingkatStyle[key];
+
+        const card = document.createElement('div');
+        card.className = `rounded-xl p-3.5 ${s.card}`;
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center gap-2 mb-2';
+
+        const badge = document.createElement('span');
+        badge.className = `text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${s.badge}`;
+        badge.textContent = s.label;
+
+        const title = document.createElement('span');
+        title.className = 'text-sm font-semibold text-gray-800 leading-snug';
+        title.textContent = item.judul ?? '';
+
+        header.appendChild(badge);
+        header.appendChild(title);
+
+        const desc = document.createElement('p');
+        desc.className = 'text-sm text-gray-700 leading-relaxed mb-2';
+        desc.textContent = item.deskripsi ?? '';
+
+        const saranRow = document.createElement('div');
+        saranRow.className = 'flex items-start gap-1.5';
+        const saranDot = document.createElement('span');
+        saranDot.className = 'text-amber-500 flex-shrink-0 mt-0.5';
+        saranDot.textContent = '💡';
+        const saranTxt = document.createElement('p');
+        saranTxt.className = 'text-xs text-gray-600 leading-relaxed';
+        saranTxt.textContent = item.saran ?? '';
+        saranRow.appendChild(saranDot);
+        saranRow.appendChild(saranTxt);
+
+        card.appendChild(header);
+        card.appendChild(desc);
+        card.appendChild(saranRow);
+        anomalyList.appendChild(card);
+      }
+    }
+
+    anomalyResult.classList.remove('hidden');
+    anomalyResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  btnAnomaly.addEventListener('click', async () => {
+    anomalyError.classList.add('hidden');
+    anomalyResult.classList.add('hidden');
+    setAnomalyLoading(true);
+
+    const today = new Date();
+
+    // Bulan berjalan (untuk deteksi)
+    const curYm    = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const curLabel = today.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const curFrom  = `${curYm}-01`;
+    const curTo    = `${curYm}-${String(new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+
+    // 3 bulan penuh sebelum bulan berjalan (Opsi A, untuk baseline)
+    const baseMonths = Array.from({ length: 3 }, (_, i) => {
+      const d  = new Date(today.getFullYear(), today.getMonth() - 1 - i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return ym;
+    }).reverse();
+    const baseFrom    = `${baseMonths[0]}-01`;
+    const [bly, blm]  = baseMonths[2].split('-').map(Number);
+    const baseTo      = `${baseMonths[2]}-${String(new Date(bly, blm, 0).getDate()).padStart(2, '0')}`;
+
+    // Jalankan kedua query secara paralel untuk efisiensi
+    const [curResult, baseResult] = await Promise.all([
+      supabase
+        .from('transactions')
+        .select('amount, description, transaction_date, categories!inner(name, type)')
+        .eq('user_id', session.user.id)
+        .gte('transaction_date', curFrom)
+        .lte('transaction_date', curTo)
+        .order('amount', { ascending: false }),
+      supabase
+        .from('transactions')
+        .select('amount, transaction_date, categories!inner(name, type)')
+        .eq('user_id', session.user.id)
+        .gte('transaction_date', baseFrom)
+        .lte('transaction_date', baseTo),
+    ]);
+
+    if (curResult.error || baseResult.error) {
+      setAnomalyLoading(false);
+      anomalyError.textContent = 'Gagal mengambil data. Periksa koneksi dan coba lagi.';
+      anomalyError.classList.remove('hidden');
+      return;
+    }
+
+    // Filter hanya pengeluaran bulan berjalan
+    const curExpense = (curResult.data ?? []).filter(tx => (tx.categories as any)?.type === 'expense');
+
+    if (curExpense.length === 0) {
+      setAnomalyLoading(false);
+      anomalyError.textContent = `Belum ada pengeluaran di ${curLabel}. Tambahkan transaksi terlebih dahulu.`;
+      anomalyError.classList.remove('hidden');
+      return;
+    }
+
+    // Agregasi pengeluaran bulan berjalan per kategori
+    const curCatMap = new Map<string, { total: number; count: number }>();
+    for (const tx of curExpense) {
+      const name = ((tx.categories as any)?.name as string) ?? 'Lain-lain';
+      const amt  = Number(tx.amount);
+      const prev = curCatMap.get(name) ?? { total: 0, count: 0 };
+      curCatMap.set(name, { total: prev.total + amt, count: prev.count + 1 });
+    }
+    const currentMonth = {
+      expense_by_category: [...curCatMap.entries()]
+        .map(([category, d]) => ({ category, ...d }))
+        .sort((a, b) => b.total - a.total),
+    };
+
+    // Top N transaksi terbesar (data sudah diurutkan DESC dari query)
+    const topTxs = curExpense.slice(0, TOP_TRANSACTIONS_LIMIT).map(tx => ({
+      description: (tx.description as string | null) || 'Tanpa deskripsi',
+      amount:      Number(tx.amount),
+      category:    ((tx.categories as any)?.name as string) ?? 'Lain-lain',
+      date:        new Date(tx.transaction_date as string)
+                     .toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+    }));
+
+    // Hitung baseline: rata-rata per kategori per bulan aktif
+    const catYmMap = new Map<string, Map<string, number>>();
+    for (const tx of baseResult.data ?? []) {
+      const cat = tx.categories as any;
+      if (cat?.type !== 'expense') continue;
+      const name = (cat?.name as string) ?? 'Lain-lain';
+      const ym   = (tx.transaction_date as string).substring(0, 7);
+      const amt  = Number(tx.amount);
+      if (!catYmMap.has(name)) catYmMap.set(name, new Map());
+      const ymMap = catYmMap.get(name)!;
+      ymMap.set(ym, (ymMap.get(ym) ?? 0) + amt);
+    }
+
+    const distinctBaseMonths = new Set<string>();
+    for (const [, ymMap] of catYmMap)
+      for (const ym of ymMap.keys()) distinctBaseMonths.add(ym);
+    const baselineMonthsCount = distinctBaseMonths.size;
+
+    const baseline = [...catYmMap.entries()].map(([category, ymMap]) => {
+      const totals  = [...ymMap.values()];
+      const avg     = totals.reduce((s, v) => s + v, 0) / totals.length;
+      return { category, avg_bulanan: Math.round(avg) };
+    }).sort((a, b) => b.avg_bulanan - a.avg_bulanan);
+
+    // Panggil edge function
+    const { data, error: aiError } = await supabase.functions.invoke('ai-insights', {
+      body: {
+        mode:                'anomaly',
+        current_month_label: curLabel,
+        current_month:       currentMonth,
+        baseline,
+        transaksi_terbesar:  topTxs,
+        has_baseline:        baseline.length > 0,
+        baseline_months:     baselineMonthsCount,
+      },
+    });
+
+    setAnomalyLoading(false);
+
+    if (aiError || !data) {
+      anomalyError.textContent = 'Gagal menghubungi layanan AI. Periksa koneksi dan coba lagi.';
+      anomalyError.classList.remove('hidden');
+      return;
+    }
+    if (data.error) {
+      anomalyError.textContent = data.error;
+      anomalyError.classList.remove('hidden');
+      return;
+    }
+
+    renderAnomaly(data.result, curLabel);
+    toast('Deteksi selesai!', 'success');
   });
 </script>
